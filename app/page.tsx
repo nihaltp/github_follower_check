@@ -10,6 +10,8 @@ import { Input } from "@/components/ui/input"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
+import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group"
+import { Label } from "@/components/ui/label"
 import { getNonFollowers } from "./actions"
 
 interface GitHubUser {
@@ -26,6 +28,7 @@ export default function Home() {
   const [searchedUsername, setSearchedUsername] = useState<string | null>(null)
   const [showInlineTokenInput, setShowInlineTokenInput] = useState(false)
   const [tempGithubToken, setTempGithubToken] = useState("")
+  const [checkType, setCheckType] = useState<"not-following-back" | "not-followed-back">("not-following-back")
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
@@ -35,7 +38,7 @@ export default function Home() {
     setSearchedUsername(username)
 
     try {
-      const data = await getNonFollowers(username, tempGithubToken)
+      const data = await getNonFollowers(username, tempGithubToken, checkType)
       if (data.error) {
         setError(data.error)
         if (data.isRateLimitError) {
@@ -58,6 +61,26 @@ export default function Home() {
     }
   }
 
+  const getResultTitle = () => {
+    if (checkType === "not-following-back") {
+      return `Users ${searchedUsername} follows who don't follow back:`
+    } else {
+      return `Users who follow ${searchedUsername} but ${searchedUsername} doesn't follow back:`
+    }
+  }
+
+  const getNoResultsMessage = () => {
+    if (searchedUsername === username) {
+      if (checkType === "not-following-back") {
+        return `No users found that ${username} follows but don't follow back.`
+      } else {
+        return `No users found who follow ${username} but ${username} doesn't follow back.`
+      }
+    } else {
+      return "Enter a username to start searching."
+    }
+  }
+
   return (
     <div className="flex flex-col items-center justify-center min-h-screen bg-gray-100 dark:bg-gray-950 p-4">
       <Card className="w-full max-w-md">
@@ -65,7 +88,9 @@ export default function Home() {
           <CardTitle className="text-2xl font-bold flex items-center justify-center gap-2">
             <Github className="w-6 h-6" /> GitHub Follower Checker
           </CardTitle>
-          <p className="text-muted-foreground">Find out who you follow on GitHub that doesn't follow you back.</p>
+          <p className="text-muted-foreground">
+            Find out who you follow on GitHub that doesn't follow you back, or vice versa.
+          </p>
         </CardHeader>
         <CardContent>
           <form onSubmit={handleSubmit} className="space-y-4">
@@ -77,6 +102,22 @@ export default function Home() {
               required
               className="w-full"
             />
+
+            <RadioGroup
+              value={checkType}
+              onValueChange={(value: "not-following-back" | "not-followed-back") => setCheckType(value)}
+              className="flex flex-col space-y-1"
+            >
+              <div className="flex items-center space-x-2">
+                <RadioGroupItem value="not-following-back" id="option-1" />
+                <Label htmlFor="option-1">Users I follow who don't follow me back</Label>
+              </div>
+              <div className="flex items-center space-x-2">
+                <RadioGroupItem value="not-followed-back" id="option-2" />
+                <Label htmlFor="option-2">Users who follow me but I don't follow back</Label>
+              </div>
+            </RadioGroup>
+
             {showInlineTokenInput && (
               <div className="space-y-2">
                 <p className="text-sm text-muted-foreground">
@@ -122,19 +163,13 @@ export default function Home() {
 
           {!loading && searchedUsername && results.length === 0 && !error && !showInlineTokenInput && (
             <div className="mt-6 text-center text-muted-foreground">
-              {searchedUsername === username ? (
-                <p>No users found that {username} follows but don't follow back.</p>
-              ) : (
-                <p>Enter a username to start searching.</p>
-              )}
+              <p>{getNoResultsMessage()}</p>
             </div>
           )}
 
           {results.length > 0 && (
             <div className="mt-6 space-y-4">
-              <h2 className="text-lg font-semibold text-center">
-                Users {searchedUsername} follows who don't follow back:
-              </h2>
+              <h2 className="text-lg font-semibold text-center">{getResultTitle()}</h2>
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 {results.map((user) => (
                   <Card key={user.login} className="flex items-center p-3 gap-3">

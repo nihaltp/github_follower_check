@@ -39,7 +39,11 @@ async function fetchGitHubData(url: string, githubToken?: string): Promise<{ dat
   return { data, rateLimitExceeded: false }
 }
 
-export async function getNonFollowers(username: string, githubToken?: string): Promise<GetNonFollowersResult> {
+export async function getNonFollowers(
+  username: string,
+  githubToken?: string,
+  checkType: "not-following-back" | "not-followed-back" = "not-following-back",
+): Promise<GetNonFollowersResult> {
   try {
     // Fetch following
     const { data: followingData, rateLimitExceeded: followingRateLimitExceeded } = await fetchGitHubData(
@@ -61,15 +65,22 @@ export async function getNonFollowers(username: string, githubToken?: string): P
     }
     const followers: GitHubUser[] = followersData
 
-    const followerLogins = new Set(followers.map((f) => f.login))
+    let resultUsers: GitHubUser[] = []
 
-    const nonFollowers = following.filter((user) => !followerLogins.has(user.login))
+    if (checkType === "not-following-back") {
+      // Find users the target username follows who don't follow them back
+      const followerLogins = new Set(followers.map((f) => f.login))
+      resultUsers = following.filter((user) => !followerLogins.has(user.login))
+    } else if (checkType === "not-followed-back") {
+      // Find users who follow the target username, but the target username doesn't follow them back
+      const followingLogins = new Set(following.map((f) => f.login))
+      resultUsers = followers.filter((user) => !followingLogins.has(user.login))
+    }
 
-    return { users: nonFollowers }
+    return { users: resultUsers }
   } catch (err) {
     console.error("Error in getNonFollowers:", err)
     if (err instanceof Error) {
-      // Check for specific rate limit message if it's not caught by status code
       if (err.message.includes("API rate limit exceeded")) {
         return { error: "GitHub API rate limit exceeded. Please provide a token.", isRateLimitError: true }
       }
