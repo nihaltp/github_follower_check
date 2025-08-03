@@ -7,8 +7,6 @@ interface GitHubUser {
   followers?: number
   following?: number
   public_repos?: number
-  public_gists?: number
-  total_stars?: number
 }
 
 interface GetNonFollowersResult {
@@ -86,12 +84,12 @@ export async function getNonFollowers(
       resultUsers = followers.filter((user) => !followingLogins.has(user.login))
     }
 
-    // Fetch full profile data for each user in the resultUsers list, including total stars
+    // Fetch full profile data for each user in the resultUsers list
     const usersWithDetails = await Promise.all(
       resultUsers.map(async (user) => {
         const userDetails: GitHubUser = { ...user }
 
-        // Fetch user profile details (followers, following, public_repos, public_gists)
+        // Fetch user profile details (followers, following, public_repos)
         try {
           const { data: userProfileData, rateLimitExceeded: userProfileRateLimitExceeded } = await fetchGitHubData(
             `${GITHUB_API_BASE_URL}/users/${user.login}`,
@@ -99,59 +97,15 @@ export async function getNonFollowers(
           )
           if (userProfileRateLimitExceeded) {
             partialDataRateLimitHit = true
-            // Do not set criticalRateLimitHit here, as main data is already fetched
           } else {
             userDetails.followers = userProfileData.followers
             userDetails.following = userProfileData.following
             userDetails.public_repos = userProfileData.public_repos
-            userDetails.public_gists = userProfileData.public_gists
           }
         } catch (profileErr) {
           console.warn(`Could not fetch profile for ${user.login}:`, profileErr)
           partialDataRateLimitHit = true
         }
-
-        // Fetch repositories and sum stars
-        let totalStars = 0
-        let currentPage = 1
-        let hasNextPage = true
-        let reposRateLimitHitForUser = false
-
-        while (hasNextPage && !reposRateLimitHitForUser) {
-          try {
-            const { data: reposData, rateLimitExceeded: tempReposRateLimitExceeded } = await fetchGitHubData(
-              `${GITHUB_API_BASE_URL}/users/${user.login}/repos?per_page=100&page=${currentPage}`,
-              githubToken,
-            )
-
-            if (tempReposRateLimitExceeded) {
-              reposRateLimitHitForUser = true
-              partialDataRateLimitHit = true
-              break
-            }
-
-            if (!Array.isArray(reposData) || reposData.length === 0) {
-              hasNextPage = false
-            } else {
-              for (const repo of reposData) {
-                if (repo.stargazers_count !== undefined) {
-                  totalStars += repo.stargazers_count
-                }
-              }
-              if (reposData.length < 100) {
-                hasNextPage = false
-              } else {
-                currentPage++
-              }
-            }
-          } catch (reposErr) {
-            console.warn(`Could not fetch repos for ${user.login}:`, reposErr)
-            reposRateLimitHitForUser = true
-            partialDataRateLimitHit = true
-            break
-          }
-        }
-        userDetails.total_stars = reposRateLimitHitForUser ? undefined : totalStars
 
         return userDetails
       }),
@@ -161,7 +115,7 @@ export async function getNonFollowers(
     if (partialDataRateLimitHit) {
       result.hasPartialDataError = true
       result.error =
-        "Some user details (like star counts) could not be fetched due to GitHub API rate limit. Please provide a token for full details."
+        "Some user details could not be fetched due to GitHub API rate limit. Please provide a token for full details."
     }
     return result
   } catch (err) {

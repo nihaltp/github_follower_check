@@ -4,7 +4,7 @@ import type React from "react"
 
 import { useState } from "react"
 import Link from "next/link"
-import { Loader2, Github, Users, GitPullRequest, Star, FileText } from "lucide-react"
+import { Loader2, Github, Users, GitPullRequest } from "lucide-react" // Removed Star icon
 
 import { Input } from "@/components/ui/input"
 import { Button } from "@/components/ui/button"
@@ -22,7 +22,6 @@ interface GitHubUser {
   following?: number
   public_repos?: number
   public_gists?: number
-  total_stars?: number
 }
 
 export default function Home() {
@@ -211,18 +210,6 @@ export default function Home() {
                           <div className="flex items-center gap-1">
                             <GitPullRequest className="w-4 h-4" />
                             <span>{user.public_repos} Repos</span>
-                          </div>
-                        )}
-                        {user.total_stars !== undefined && (
-                          <div className="flex items-center gap-1">
-                            <Star className="w-4 h-4" />
-                            <span>{user.total_stars} Stars</span>
-                          </div>
-                        )}
-                        {user.public_gists !== undefined && (
-                          <div className="flex items-center gap-1">
-                            <FileText className="w-4 h-4" />
-                            <span>{user.public_gists} Gists</span>
                           </div>
                         )}
                       </div>
