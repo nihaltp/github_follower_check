@@ -4,10 +4,10 @@ import type React from "react"
 
 import { useState } from "react"
 import Link from "next/link"
-import { Loader2, Github, Users, GitPullRequest, Star, FileText } from "lucide-react" // Added FileText icon
+import { Loader2, Github, Users, GitPullRequest, Star, FileText } from "lucide-react"
 
 import { Input } from "@/components/ui/input"
-import { Button } from "@/components/ui/button" // Corrected import statement
+import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group"
@@ -47,15 +47,18 @@ export default function Home() {
       if (data.error) {
         setError(data.error)
         if (data.isRateLimitError) {
-          setShowInlineTokenInput(true)
+          setShowInlineTokenInput(true) // Show token input for critical rate limit errors
         } else {
-          setShowInlineTokenInput(false)
+          setShowInlineTokenInput(false) // Hide for other errors
           setTempGithubToken("")
         }
       } else {
         setResults(data.users || [])
-        setShowInlineTokenInput(false)
+        setShowInlineTokenInput(false) // Hide token input on success
         setTempGithubToken("")
+        if (data.hasPartialDataError) {
+          setError(data.error || "Some details could not be fetched due to rate limits.") // Show partial error
+        }
       }
     } catch (err) {
       console.error("Failed to fetch data:", err)
@@ -210,13 +213,13 @@ export default function Home() {
                             <span>{user.public_repos} Repos</span>
                           </div>
                         )}
-                        {user.total_stars !== undefined && ( // Display total_stars
+                        {user.total_stars !== undefined && (
                           <div className="flex items-center gap-1">
                             <Star className="w-4 h-4" />
                             <span>{user.total_stars} Stars</span>
                           </div>
                         )}
-                        {user.public_gists !== undefined && ( // Display public_gists with new icon
+                        {user.public_gists !== undefined && (
                           <div className="flex items-center gap-1">
                             <FileText className="w-4 h-4" />
                             <span>{user.public_gists} Gists</span>
