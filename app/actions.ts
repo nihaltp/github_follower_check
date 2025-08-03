@@ -4,6 +4,10 @@ interface GitHubUser {
   login: string
   avatar_url: string
   html_url: string
+  followers?: number // Added for user profile details
+  following?: number // Added for user profile details
+  public_repos?: number // Added for user profile details
+  public_gists?: number // Added for user profile details
 }
 
 interface GetNonFollowersResult {
@@ -77,7 +81,42 @@ export async function getNonFollowers(
       resultUsers = followers.filter((user) => !followingLogins.has(user.login))
     }
 
-    return { users: resultUsers }
+    // Fetch full profile data for each user in the resultUsers list
+    const usersWithDetails = await Promise.all(
+      resultUsers.map(async (user) => {
+        const { data: userProfileData, rateLimitExceeded: userProfileRateLimitExceeded } = await fetchGitHubData(
+          `${GITHUB_API_BASE_URL}/users/${user.login}`,
+          githubToken,
+        )
+        if (userProfileRateLimitExceeded) {
+          // If rate limit hit during profile fetch, return partial data and indicate error
+          return {
+            ...user,
+            error: "Rate limit hit while fetching user details. Some details might be missing.",
+            isRateLimitError: true,
+          }
+        }
+        return {
+          ...user,
+          followers: userProfileData.followers,
+          following: userProfileData.following,
+          public_repos: userProfileData.public_repos,
+          public_gists: userProfileData.public_gists,
+        }
+      }),
+    )
+
+    // Check if any of the individual profile fetches hit a rate limit
+    const anyRateLimitError = usersWithDetails.some((user) => (user as any).isRateLimitError)
+    if (anyRateLimitError) {
+      return {
+        users: usersWithDetails,
+        error: "Some user details could not be fetched due to GitHub API rate limit. Please provide a token.",
+        isRateLimitError: true,
+      }
+    }
+
+    return { users: usersWithDetails }
   } catch (err) {
     console.error("Error in getNonFollowers:", err)
     if (err instanceof Error) {

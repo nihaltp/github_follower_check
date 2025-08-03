@@ -4,7 +4,7 @@ import type React from "react"
 
 import { useState } from "react"
 import Link from "next/link"
-import { Loader2, Github } from "lucide-react"
+import { Loader2, Github, Users, GitPullRequest, Star } from "lucide-react" // Added Users, GitPullRequest, Star icons
 
 import { Input } from "@/components/ui/input"
 import { Button } from "@/components/ui/button"
@@ -18,6 +18,10 @@ interface GitHubUser {
   login: string
   avatar_url: string
   html_url: string
+  followers?: number
+  following?: number
+  public_repos?: number
+  public_gists?: number
 }
 
 export default function Home() {
@@ -172,8 +176,8 @@ export default function Home() {
               <h2 className="text-lg font-semibold text-center">{getResultTitle()}</h2>
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 {results.map((user) => (
-                  <Card key={user.login} className="flex items-center p-3 gap-3">
-                    <Avatar className="h-10 w-10">
+                  <Card key={user.login} className="flex flex-col items-center p-3 gap-3 text-center">
+                    <Avatar className="h-16 w-16">
                       <AvatarImage src={user.avatar_url || "/placeholder.svg"} alt={`${user.login}'s avatar`} />
                       <AvatarFallback>{user.login.substring(0, 2).toUpperCase()}</AvatarFallback>
                     </Avatar>
@@ -182,10 +186,36 @@ export default function Home() {
                         href={user.html_url}
                         target="_blank"
                         rel="noopener noreferrer"
-                        className="font-medium hover:underline"
+                        className="font-medium hover:underline text-lg"
                       >
                         {user.login}
                       </Link>
+                      <div className="mt-2 text-sm text-muted-foreground flex flex-wrap justify-center gap-x-4 gap-y-2">
+                        {user.followers !== undefined && (
+                          <div className="flex items-center gap-1">
+                            <Users className="w-4 h-4" />
+                            <span>{user.followers} Followers</span>
+                          </div>
+                        )}
+                        {user.following !== undefined && (
+                          <div className="flex items-center gap-1">
+                            <Users className="w-4 h-4" />
+                            <span>{user.following} Following</span>
+                          </div>
+                        )}
+                        {user.public_repos !== undefined && (
+                          <div className="flex items-center gap-1">
+                            <GitPullRequest className="w-4 h-4" />
+                            <span>{user.public_repos} Repos</span>
+                          </div>
+                        )}
+                        {user.public_gists !== undefined && (
+                          <div className="flex items-center gap-1">
+                            <Star className="w-4 h-4" />
+                            <span>{user.public_gists} Gists</span>
+                          </div>
+                        )}
+                      </div>
                     </div>
                   </Card>
                 ))}
