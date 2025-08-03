@@ -8,6 +8,7 @@ interface GitHubUser {
   following?: number // Added for user profile details
   public_repos?: number // Added for user profile details
   public_gists?: number // Added for user profile details
+  total_stars?: number // NEW: Added for total stars across repositories
 }
 
 interface GetNonFollowersResult {
@@ -81,7 +82,7 @@ export async function getNonFollowers(
       resultUsers = followers.filter((user) => !followingLogins.has(user.login))
     }
 
-    // Fetch full profile data for each user in the resultUsers list
+    // Fetch full profile data for each user in the resultUsers list, including total stars
     const usersWithDetails = await Promise.all(
       resultUsers.map(async (user) => {
         const { data: userProfileData, rateLimitExceeded: userProfileRateLimitExceeded } = await fetchGitHubData(
@@ -89,29 +90,65 @@ export async function getNonFollowers(
           githubToken,
         )
         if (userProfileRateLimitExceeded) {
-          // If rate limit hit during profile fetch, return partial data and indicate error
           return {
             ...user,
             error: "Rate limit hit while fetching user details. Some details might be missing.",
             isRateLimitError: true,
           }
         }
+
+        // Fetch repositories and sum stars
+        let totalStars = 0
+        let currentPage = 1
+        let hasNextPage = true
+        let reposRateLimitHit = false
+
+        while (hasNextPage && !reposRateLimitHit) {
+          const { data: reposData, rateLimitExceeded: tempReposRateLimitExceeded } = await fetchGitHubData(
+            `${GITHUB_API_BASE_URL}/users/${user.login}/repos?per_page=100&page=${currentPage}`,
+            githubToken,
+          )
+
+          if (tempReposRateLimitExceeded) {
+            reposRateLimitHit = true // Mark that rate limit was hit for repos
+            break
+          }
+
+          if (!Array.isArray(reposData) || reposData.length === 0) {
+            hasNextPage = false // No more pages or no repos
+          } else {
+            for (const repo of reposData) {
+              if (repo.stargazers_count !== undefined) {
+                totalStars += repo.stargazers_count
+              }
+            }
+            if (reposData.length < 100) {
+              hasNextPage = false
+            } else {
+              currentPage++
+            }
+          }
+        }
+
         return {
           ...user,
           followers: userProfileData.followers,
           following: userProfileData.following,
           public_repos: userProfileData.public_repos,
           public_gists: userProfileData.public_gists,
+          total_stars: reposRateLimitHit ? undefined : totalStars, // Set to undefined if rate limit hit
+          isRateLimitError: userProfileRateLimitExceeded || reposRateLimitHit ? true : undefined, // Propagate
         }
       }),
     )
 
-    // Check if any of the individual profile fetches hit a rate limit
+    // Check if any of the individual profile or repo fetches hit a rate limit
     const anyRateLimitError = usersWithDetails.some((user) => (user as any).isRateLimitError)
     if (anyRateLimitError) {
       return {
         users: usersWithDetails,
-        error: "Some user details could not be fetched due to GitHub API rate limit. Please provide a token.",
+        error:
+          "Some user details (like star counts) could not be fetched due to GitHub API rate limit. Please provide a token.",
         isRateLimitError: true,
       }
     }

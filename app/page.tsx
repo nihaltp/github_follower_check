@@ -4,10 +4,10 @@ import type React from "react"
 
 import { useState } from "react"
 import Link from "next/link"
-import { Loader2, Github, Users, GitPullRequest, Star } from "lucide-react" // Added Users, GitPullRequest, Star icons
+import { Loader2, Github, Users, GitPullRequest, Star, FileText } from "lucide-react" // Added FileText icon
 
 import { Input } from "@/components/ui/input"
-import { Button } from "@/components/ui/button"
+import { Button } from "@/components/ui/button" // Corrected import statement
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group"
@@ -22,6 +22,7 @@ interface GitHubUser {
   following?: number
   public_repos?: number
   public_gists?: number
+  total_stars?: number
 }
 
 export default function Home() {
@@ -209,9 +210,15 @@ export default function Home() {
                             <span>{user.public_repos} Repos</span>
                           </div>
                         )}
-                        {user.public_gists !== undefined && (
+                        {user.total_stars !== undefined && ( // Display total_stars
                           <div className="flex items-center gap-1">
                             <Star className="w-4 h-4" />
+                            <span>{user.total_stars} Stars</span>
+                          </div>
+                        )}
+                        {user.public_gists !== undefined && ( // Display public_gists with new icon
+                          <div className="flex items-center gap-1">
+                            <FileText className="w-4 h-4" />
                             <span>{user.public_gists} Gists</span>
                           </div>
                         )}
