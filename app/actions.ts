@@ -7,6 +7,7 @@ interface GitHubUser {
   followers?: number
   following?: number
   public_repos?: number
+  // Removed public_gists
 }
 
 interface GetNonFollowersResult {
@@ -18,114 +19,144 @@ interface GetNonFollowersResult {
 
 const GITHUB_API_BASE_URL = "https://api.github.com"
 
-async function fetchGitHubData(url: string, githubToken?: string): Promise<{ data: any; rateLimitExceeded: boolean }> {
+async function fetchGitHubApi(
+  path: string,
+  token?: string,
+  page = 1,
+  per_page = 100,
+): Promise<any[] | { error: string; isRateLimitError?: boolean }> {
   const headers: HeadersInit = {
     "X-GitHub-Api-Version": "2022-11-28",
     Accept: "application/vnd.github+json",
   }
-
-  if (githubToken) {
-    headers.Authorization = `token ${githubToken}`
+  if (token) {
+    headers.Authorization = `Bearer ${token}`
   }
 
-  const response = await fetch(url, { headers, next: { revalidate: 3600 } }) // Cache for 1 hour
+  const url = `${GITHUB_API_BASE_URL}${path}?page=${page}&per_page=${per_page}`
 
-  if (response.status === 403 && response.headers.get("X-RateLimit-Remaining") === "0") {
-    return { data: null, rateLimitExceeded: true }
+  try {
+    const response = await fetch(url, { headers, next: { revalidate: 3600 } }) // Revalidate every hour
+
+    if (response.status === 403 && response.headers.get("X-RateLimit-Remaining") === "0") {
+      return {
+        error: "GitHub API rate limit exceeded. Please provide a Personal Access Token.",
+        isRateLimitError: true,
+      }
+    }
+
+    if (!response.ok) {
+      const errorData = await response.json()
+      return { error: errorData.message || `GitHub API error: ${response.status}`, isRateLimitError: false }
+    }
+
+    return await response.json()
+  } catch (error) {
+    console.error("Error fetching from GitHub API:", error)
+    return { error: "Failed to connect to GitHub API.", isRateLimitError: false }
   }
+}
 
-  if (!response.ok) {
-    const errorText = await response.text()
-    throw new Error(`GitHub API error: ${response.status} ${response.statusText} - ${errorText}`)
+async function fetchAllPages(
+  path: string,
+  token?: string,
+): Promise<any[] | { error: string; isRateLimitError?: boolean }> {
+  let allData: any[] = []
+  let page = 1
+  let hasMore = true
+
+  while (hasMore) {
+    const data = await fetchGitHubApi(path, token, page)
+
+    if ("error" in data) {
+      return data // Propagate error
+    }
+
+    if (data.length === 0 || data.length < 100) {
+      hasMore = false
+    }
+    allData = allData.concat(data)
+    page++
   }
+  return allData
+}
 
-  const data = await response.json()
-  return { data, rateLimitExceeded: false }
+async function getUserDetails(username: string, token?: string): Promise<GitHubUser | null> {
+  const userData = await fetchGitHubApi(`/users/${username}`, token)
+  if ("error" in userData) {
+    return null // Return null if user details cannot be fetched
+  }
+  return {
+    login: userData.login,
+    avatar_url: userData.avatar_url,
+    html_url: userData.html_url,
+    followers: userData.followers,
+    following: userData.following,
+    public_repos: userData.public_repos,
+    // Removed public_gists
+  }
 }
 
 export async function getNonFollowers(
   username: string,
-  githubToken?: string,
+  token?: string,
   checkType: "not-following-back" | "not-followed-back" = "not-following-back",
 ): Promise<GetNonFollowersResult> {
-  let criticalRateLimitHit = false
-  let partialDataRateLimitHit = false
+  if (!username) {
+    return { error: "Username cannot be empty." }
+  }
 
-  try {
-    // Fetch following
-    const { data: followingData, rateLimitExceeded: followingRateLimitExceeded } = await fetchGitHubData(
-      `${GITHUB_API_BASE_URL}/users/${username}/following?per_page=100`,
-      githubToken,
-    )
-    if (followingRateLimitExceeded) {
-      criticalRateLimitHit = true
-      return { error: "GitHub API rate limit exceeded for following. Please provide a token.", isRateLimitError: true }
+  const userDetails = await getUserDetails(username, token)
+  if (!userDetails) {
+    return { error: `Could not find GitHub user: ${username}.`, isRateLimitError: false }
+  }
+
+  let followingData: any[] | { error: string; isRateLimitError?: boolean }
+  let followersData: any[] | { error: string; isRateLimitError?: boolean }
+
+  // Fetch both lists regardless of checkType, as both are needed for comparison
+  followingData = await fetchAllPages(`/users/${username}/following`, token)
+  followersData = await fetchAllPages(`/users/${username}/followers`, token)
+
+  if ("error" in followingData) {
+    return followingData // Propagate critical error
+  }
+  if ("error" in followersData) {
+    return followersData // Propagate critical error
+  }
+
+  const followingSet = new Set((followingData as any[]).map((user) => user.login.toLowerCase()))
+  const followersSet = new Set((followersData as any[]).map((user) => user.login.toLowerCase()))
+
+  let nonFollowersLogins: string[] = []
+
+  if (checkType === "not-following-back") {
+    // Users I follow who don't follow me back
+    nonFollowersLogins = (followingData as any[])
+      .filter((user) => !followersSet.has(user.login.toLowerCase()))
+      .map((user) => user.login)
+  } else {
+    // Users who follow me but I don't follow back
+    nonFollowersLogins = (followersData as any[])
+      .filter((user) => !followingSet.has(user.login.toLowerCase()))
+      .map((user) => user.login)
+  }
+
+  const usersWithDetails: GitHubUser[] = []
+  let hasPartialDataError = false
+
+  for (const login of nonFollowersLogins) {
+    const details = await getUserDetails(login, token)
+    if (details) {
+      usersWithDetails.push(details)
+    } else {
+      hasPartialDataError = true
     }
-    const following: GitHubUser[] = followingData
+  }
 
-    // Fetch followers
-    const { data: followersData, rateLimitExceeded: followersRateLimitExceeded } = await fetchGitHubData(
-      `${GITHUB_API_BASE_URL}/users/${username}/followers?per_page=100`,
-      githubToken,
-    )
-    if (followersRateLimitExceeded) {
-      criticalRateLimitHit = true
-      return { error: "GitHub API rate limit exceeded for followers. Please provide a token.", isRateLimitError: true }
-    }
-    const followers: GitHubUser[] = followersData
-
-    let resultUsers: GitHubUser[] = []
-
-    if (checkType === "not-following-back") {
-      const followerLogins = new Set(followers.map((f) => f.login))
-      resultUsers = following.filter((user) => !followerLogins.has(user.login))
-    } else if (checkType === "not-followed-back") {
-      const followingLogins = new Set(following.map((f) => f.login))
-      resultUsers = followers.filter((user) => !followingLogins.has(user.login))
-    }
-
-    // Fetch full profile data for each user in the resultUsers list
-    const usersWithDetails = await Promise.all(
-      resultUsers.map(async (user) => {
-        const userDetails: GitHubUser = { ...user }
-
-        // Fetch user profile details (followers, following, public_repos)
-        try {
-          const { data: userProfileData, rateLimitExceeded: userProfileRateLimitExceeded } = await fetchGitHubData(
-            `${GITHUB_API_BASE_URL}/users/${user.login}`,
-            githubToken,
-          )
-          if (userProfileRateLimitExceeded) {
-            partialDataRateLimitHit = true
-          } else {
-            userDetails.followers = userProfileData.followers
-            userDetails.following = userProfileData.following
-            userDetails.public_repos = userProfileData.public_repos
-          }
-        } catch (profileErr) {
-          console.warn(`Could not fetch profile for ${user.login}:`, profileErr)
-          partialDataRateLimitHit = true
-        }
-
-        return userDetails
-      }),
-    )
-
-    const result: GetNonFollowersResult = { users: usersWithDetails }
-    if (partialDataRateLimitHit) {
-      result.hasPartialDataError = true
-      result.error =
-        "Some user details could not be fetched due to GitHub API rate limit. Please provide a token for full details."
-    }
-    return result
-  } catch (err) {
-    console.error("Error in getNonFollowers:", err)
-    if (err instanceof Error) {
-      if (err.message.includes("API rate limit exceeded")) {
-        return { error: "GitHub API rate limit exceeded. Please provide a token.", isRateLimitError: true }
-      }
-      return { error: err.message }
-    }
-    return { error: "An unknown error occurred." }
+  return {
+    users: usersWithDetails,
+    hasPartialDataError: hasPartialDataError,
+    error: hasPartialDataError ? "Some user details could not be fetched due to GitHub API rate limit." : undefined,
   }
 }

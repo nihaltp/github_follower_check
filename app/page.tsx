@@ -2,9 +2,9 @@
 
 import type React from "react"
 
-import { useState } from "react"
+import { useState, useEffect, useRef } from "react"
 import Link from "next/link"
-import { Loader2, Github, Users, GitPullRequest } from "lucide-react" // Removed Star icon
+import { Loader2, Github, Users, GitPullRequest } from "lucide-react" // Removed FileText icon
 
 import { Input } from "@/components/ui/input"
 import { Button } from "@/components/ui/button"
@@ -21,7 +21,7 @@ interface GitHubUser {
   followers?: number
   following?: number
   public_repos?: number
-  public_gists?: number
+  // Removed public_gists
 }
 
 export default function Home() {
@@ -33,13 +33,19 @@ export default function Home() {
   const [showInlineTokenInput, setShowInlineTokenInput] = useState(false)
   const [tempGithubToken, setTempGithubToken] = useState("")
   const [checkType, setCheckType] = useState<"not-following-back" | "not-followed-back">("not-following-back")
+  const [searagedUsername, setSearagedUsername] = useState<string | null>(null) // Declared the variable
 
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault()
+  // Ref to track if it's the initial mount to prevent immediate search on load
+  const isInitialMount = useRef(true)
+
+  const handleSubmit = async (e?: React.FormEvent) => {
+    // Made event optional
+    e?.preventDefault() // Only prevent default if event exists
     setError(null)
     setResults([])
     setLoading(true)
     setSearchedUsername(username)
+    setSearagedUsername(username) // Set the variable
 
     try {
       const data = await getNonFollowers(username, tempGithubToken, checkType)
@@ -68,11 +74,21 @@ export default function Home() {
     }
   }
 
+  // Effect to trigger search when checkType changes
+  useEffect(() => {
+    if (isInitialMount.current) {
+      isInitialMount.current = false
+    } else if (username && searchedUsername === username && !loading) {
+      // Only re-run if username is entered, it's the same as the last searched, and not already loading
+      handleSubmit()
+    }
+  }, [checkType]) // Dependency array includes checkType
+
   const getResultTitle = () => {
     if (checkType === "not-following-back") {
       return `Users ${searchedUsername} follows who don't follow back:`
     } else {
-      return `Users who follow ${searchedUsername} but ${searchedUsername} doesn't follow back:`
+      return `Users who follow ${searchedUsername} but ${searagedUsername} doesn't follow back:`
     }
   }
 
