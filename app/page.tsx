@@ -24,6 +24,8 @@ export default function Home() {
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
   const [searchedUsername, setSearchedUsername] = useState<string | null>(null)
+  const [showInlineTokenInput, setShowInlineTokenInput] = useState(false)
+  const [tempGithubToken, setTempGithubToken] = useState("")
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
@@ -33,15 +35,24 @@ export default function Home() {
     setSearchedUsername(username)
 
     try {
-      const data = await getNonFollowers(username)
+      const data = await getNonFollowers(username, tempGithubToken)
       if (data.error) {
         setError(data.error)
+        if (data.isRateLimitError) {
+          setShowInlineTokenInput(true)
+        } else {
+          setShowInlineTokenInput(false)
+          setTempGithubToken("")
+        }
       } else {
         setResults(data.users || [])
+        setShowInlineTokenInput(false)
+        setTempGithubToken("")
       }
     } catch (err) {
       console.error("Failed to fetch data:", err)
       setError("An unexpected error occurred. Please try again.")
+      setShowInlineTokenInput(false)
     } finally {
       setLoading(false)
     }
@@ -66,12 +77,39 @@ export default function Home() {
               required
               className="w-full"
             />
+            {showInlineTokenInput && (
+              <div className="space-y-2">
+                <p className="text-sm text-muted-foreground">
+                  You've hit the unauthenticated GitHub API rate limit. Please provide a GitHub Personal Access Token
+                  (PAT) to continue. Generate one at{" "}
+                  <Link
+                    href="https://github.com/settings/tokens"
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="text-blue-500 hover:underline"
+                  >
+                    GitHub Settings &gt; Developer settings &gt; Personal access tokens
+                  </Link>
+                  . Ensure it has at least the `public_repo` scope.
+                </p>
+                <Input
+                  type="password"
+                  placeholder="Enter your GitHub PAT"
+                  value={tempGithubToken}
+                  onChange={(e) => setTempGithubToken(e.target.value)}
+                  required
+                  className="w-full"
+                />
+              </div>
+            )}
             <Button type="submit" className="w-full" disabled={loading}>
               {loading ? (
                 <>
                   <Loader2 className="mr-2 h-4 w-4 animate-spin" />
                   Searching...
                 </>
+              ) : showInlineTokenInput ? (
+                "Use Token and Retry"
               ) : (
                 "Check Followers"
               )}
@@ -82,7 +120,7 @@ export default function Home() {
             <div className="mt-4 text-center text-red-500 p-3 bg-red-100 dark:bg-red-900 rounded-md">{error}</div>
           )}
 
-          {!loading && searchedUsername && results.length === 0 && !error && (
+          {!loading && searchedUsername && results.length === 0 && !error && !showInlineTokenInput && (
             <div className="mt-6 text-center text-muted-foreground">
               {searchedUsername === username ? (
                 <p>No users found that {username} follows but don't follow back.</p>
