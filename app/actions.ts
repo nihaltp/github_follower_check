@@ -20,7 +20,7 @@ export async function getNonFollowers(username: string): Promise<GetNonFollowers
 
   try {
     // Fetch following list
-    const followingResponse = await fetch(`${GITHUB_API_BASE_URL}/users/${username}/following`, {
+    const followingResponse = await fetch(`${GITHUB_API_BASE_URL}/users/${username}/following?per_page=100`, {
       headers: {
         Accept: "application/vnd.github.v3+json",
       },
@@ -37,7 +37,7 @@ export async function getNonFollowers(username: string): Promise<GetNonFollowers
     const following: GitHubUser[] = await followingResponse.json()
 
     // Fetch followers list
-    const followersResponse = await fetch(`${GITHUB_API_BASE_URL}/users/${username}/followers`, {
+    const followersResponse = await fetch(`${GITHUB_API_BASE_URL}/users/${username}/followers?per_page=100`, {
       headers: {
         Accept: "application/vnd.github.v3+json",
       },
