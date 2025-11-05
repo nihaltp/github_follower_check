@@ -1,0 +1,56 @@
+name: Auto Update pnpm Lockfile
+
+on:
+  push:
+    # Run on any branch
+    branches: ["*"]
+    # Only trigger when npm-related files change
+    paths:
+      - "package.json"
+      - "package-lock.json"
+      - "pnpm-lock.yaml"
+
+  pull_request:
+    paths:
+      - "package.json"
+      - "package-lock.json"
+      - "pnpm-lock.yaml"
+
+  workflow_dispatch:
+    inputs:
+      branch:
+        description: "Branch to update pnpm-lock.yaml"
+        required: false
+        default: ""
+
+jobs:
+  update-lockfile:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.inputs.branch || github.head_ref || github.ref_name || 'main' }}
+          fetch-depth: 0
+
+      - name: Set up Node.js and pnpm
+        uses: pnpm/action-setup@v3
+        with:
+          version: 10
+
+      # allow pnpm to regenerate the lockfile
+      - name: Install dependencies and update lockfile
+        run: pnpm install --no-frozen-lockfile
+
+      - name: Commit lockfile changes
+        run: |
+          git config user.name "GitHub Actions"
+          git config user.email "actions@github.com"
+          git add pnpm-lock.yaml
+          git diff --cached --quiet || git commit -m "ci: auto-update pnpm-lock.yaml"
+      
+      - name: Push changes
+        run: git push
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
