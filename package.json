@@ -45,7 +45,7 @@
     "embla-carousel-react": "latest",
     "geist": "latest",
     "input-otp": "latest",
-    "lucide-react": "^0.454.0",
+    "lucide-react": "^0.545.0",
     "next": "15.4.2",
     "next-themes": "latest",
     "react": "^19",
