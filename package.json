@@ -19,7 +19,7 @@
     "@radix-ui/react-context-menu": "latest",
     "@radix-ui/react-dialog": "latest",
     "@radix-ui/react-dropdown-menu": "latest",
-    "@radix-ui/react-hover-card": "latest",
+    "@radix-ui/react-hover-card": "1.1.15",
     "@radix-ui/react-label": "latest",
     "@radix-ui/react-menubar": "latest",
     "@radix-ui/react-navigation-menu": "latest",
