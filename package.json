@@ -27,7 +27,7 @@
     "@radix-ui/react-progress": "latest",
     "@radix-ui/react-radio-group": "latest",
     "@radix-ui/react-scroll-area": "latest",
-    "@radix-ui/react-select": "latest",
+    "@radix-ui/react-select": "2.2.6",
     "@radix-ui/react-separator": "latest",
     "@radix-ui/react-slider": "latest",
     "@radix-ui/react-slot": "latest",
