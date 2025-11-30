@@ -2,21 +2,16 @@ name: Auto Update pnpm Lockfile
 
 on:
   push:
-    # Run on any branch
     branches: ["*"]
-    # Only trigger when npm-related files change
     paths:
       - "package.json"
       - "package-lock.json"
       - "pnpm-lock.yaml"
-
   pull_request:
-    types: [opened, synchronized, reopened, closed]
     paths:
       - "package.json"
       - "package-lock.json"
       - "pnpm-lock.yaml"
-
   workflow_dispatch:
     inputs:
       branch:
@@ -24,12 +19,11 @@ on:
         required: false
         default: ""
 
-permissions:
-  contents: write
-
 jobs:
   update-lockfile:
     runs-on: ubuntu-latest
+    permissions:
+      contents: write
 
     steps:
       - name: Checkout repository
@@ -43,16 +37,40 @@ jobs:
         with:
           version: 10
 
-      # allow pnpm to regenerate the lockfile
-      - name: Install dependencies and update lockfile
-        run: pnpm install --no-frozen-lockfile
-
-      - name: Commit lockfile changes
+      - name: Configure Git
         run: |
           git config user.name "GitHub Actions"
           git config user.email "actions@github.com"
-          git add pnpm-lock.yaml
-          git diff --cached --quiet || git commit -m "ci: auto-update pnpm-lock.yaml"
+
+      - name: Sync with main and resolve conflicts
+        run: |
+          git fetch origin main
+          if ! git merge origin/main --no-edit; then
+            echo "Merge conflict detected. Resolving..."
+            
+            if git grep -q "<<<<<<<" package.json; then
+              echo "Error: Conflict in package.json. Cannot automate."
+              exit 1
+            fi
+
+            git checkout origin/main -- pnpm-lock.yaml
+            pnpm install --no-frozen-lockfile
+            pnpm update react react-dom
+            git add pnpm-lock.yaml package.json
+            git commit --no-edit -m "ci: resolve lockfile conflict with main"
+          else
+            echo "Merge successful or no conflicts."
+          fi
+
+      - name: Install dependencies and update lockfile
+        run: |
+          pnpm install --no-frozen-lockfile
+          pnpm update react react-dom
+
+      - name: Commit lockfile changes
+        run: |
+          git add pnpm-lock.yaml package.json
+          git diff --cached --quiet || git commit -m "ci: auto-update pnpm-lock.yaml and sync react versions"
       
       - name: Push changes
         run: git push
