@@ -2,7 +2,7 @@ pull_request_rules:
   - name: auto-merge PRs created by nihaltp on snyk-upgrade-* branches
     conditions:
       - author=nihaltp
-      - head~=^snyk-upgrade-.*$
+      - head~=^snyk-(upgrade|fix)-.*$
       - "#check-failure=0"
       - "#check-pending=0"
       - "-conflict"
