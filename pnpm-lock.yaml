@@ -69,14 +69,14 @@ importers:
         specifier: latest
         version: 1.1.7(@types/react-dom@19.0.0)(@types/react@19.0.0)(react-dom@19.2.1(react@19.2.1))(react@19.2.1)
       '@radix-ui/react-slider':
-        specifier: latest
-        version: 1.3.5(@types/react-dom@19.0.0)(@types/react@19.0.0)(react-dom@19.2.1(react@19.2.1))(react@19.2.1)
+        specifier: 1.3.6
+        version: 1.3.6(@types/react-dom@19.0.0)(@types/react@19.0.0)(react-dom@19.2.1(react@19.2.1))(react@19.2.1)
       '@radix-ui/react-slot':
         specifier: latest
         version: 1.2.3(@types/react@19.0.0)(react@19.2.1)
       '@radix-ui/react-switch':
-        specifier: latest
-        version: 1.2.5(@types/react-dom@19.0.0)(@types/react@19.0.0)(react-dom@19.2.1(react@19.2.1))(react@19.2.1)
+        specifier: 1.2.6
+        version: 1.2.6(@types/react-dom@19.0.0)(@types/react@19.0.0)(react-dom@19.2.1(react@19.2.1))(react@19.2.1)
       '@radix-ui/react-tabs':
         specifier: latest
         version: 1.1.12(@types/react-dom@19.0.0)(@types/react@19.0.0)(react-dom@19.2.1(react@19.2.1))(react@19.2.1)
@@ -84,8 +84,8 @@ importers:
         specifier: 1.2.15
         version: 1.2.15(@types/react-dom@19.0.0)(@types/react@19.0.0)(react-dom@19.2.1(react@19.2.1))(react@19.2.1)
       '@radix-ui/react-toggle':
-        specifier: latest
-        version: 1.1.9(@types/react-dom@19.0.0)(@types/react@19.0.0)(react-dom@19.2.1(react@19.2.1))(react@19.2.1)
+        specifier: 1.1.10
+        version: 1.1.10(@types/react-dom@19.0.0)(@types/react@19.0.0)(react-dom@19.2.1(react@19.2.1))(react@19.2.1)
       '@radix-ui/react-toggle-group':
         specifier: 1.1.11
         version: 1.1.11(@types/react-dom@19.0.0)(@types/react@19.0.0)(react-dom@19.2.1(react@19.2.1))(react@19.2.1)
@@ -871,8 +871,8 @@ packages:
       '@types/react-dom':
         optional: true
 
-  '@radix-ui/react-slider@1.3.5':
-    resolution: {integrity: sha512-rkfe2pU2NBAYfGaxa3Mqosi7VZEWX5CxKaanRv0vZd4Zhl9fvQrg0VM93dv3xGLGfrHuoTRF3JXH8nb9g+B3fw==}
+  '@radix-ui/react-slider@1.3.6':
+    resolution: {integrity: sha512-JPYb1GuM1bxfjMRlNLE+BcmBC8onfCi60Blk7OBqi2MLTFdS+8401U4uFjnwkOr49BLmXxLC6JHkvAsx5OJvHw==}
     peerDependencies:
       '@types/react': '*'
       '@types/react-dom': '*'
@@ -893,8 +893,8 @@ packages:
       '@types/react':
         optional: true
 
-  '@radix-ui/react-switch@1.2.5':
-    resolution: {integrity: sha512-5ijLkak6ZMylXsaImpZ8u4Rlf5grRmoc0p0QeX9VJtlrM4f5m3nCTX8tWga/zOA8PZYIR/t0p2Mnvd7InrJ6yQ==}
+  '@radix-ui/react-switch@1.2.6':
+    resolution: {integrity: sha512-bByzr1+ep1zk4VubeEVViV592vu2lHE2BZY5OnzehZqOOgogN80+mNtCqPkhn2gklJqOpxWgPoYTSnhBCqpOXQ==}
     peerDependencies:
       '@types/react': '*'
       '@types/react-dom': '*'
@@ -934,6 +934,19 @@ packages:
 
   '@radix-ui/react-toggle-group@1.1.11':
     resolution: {integrity: sha512-5umnS0T8JQzQT6HbPyO7Hh9dgd82NmS36DQr+X/YJ9ctFNCiiQd6IJAYYZ33LUwm8M+taCz5t2ui29fHZc4Y6Q==}
+    peerDependencies:
+      '@types/react': '*'
+      '@types/react-dom': '*'
+      react: ^16.8 || ^17.0 || ^18.0 || ^19.0 || ^19.0.0-rc
+      react-dom: ^16.8 || ^17.0 || ^18.0 || ^19.0 || ^19.0.0-rc
+    peerDependenciesMeta:
+      '@types/react':
+        optional: true
+      '@types/react-dom':
+        optional: true
+
+  '@radix-ui/react-toggle@1.1.10':
+    resolution: {integrity: sha512-lS1odchhFTeZv3xwHH31YPObmJn8gOg7Lq12inrr0+BH/l3Tsq32VfjqH1oh80ARM3mlkfMic15n0kg4sD1poQ==}
     peerDependencies:
       '@types/react': '*'
       '@types/react-dom': '*'
@@ -2420,10 +2433,10 @@ snapshots:
       '@types/react': 19.0.0
       '@types/react-dom': 19.0.0
 
-  '@radix-ui/react-slider@1.3.5(@types/react-dom@19.0.0)(@types/react@19.0.0)(react-dom@19.2.1(react@19.2.1))(react@19.2.1)':
+  '@radix-ui/react-slider@1.3.6(@types/react-dom@19.0.0)(@types/react@19.0.0)(react-dom@19.2.1(react@19.2.1))(react@19.2.1)':
     dependencies:
       '@radix-ui/number': 1.1.1
-      '@radix-ui/primitive': 1.1.2
+      '@radix-ui/primitive': 1.1.3
       '@radix-ui/react-collection': 1.1.7(@types/react-dom@19.0.0)(@types/react@19.0.0)(react-dom@19.2.1(react@19.2.1))(react@19.2.1)
       '@radix-ui/react-compose-refs': 1.1.2(@types/react@19.0.0)(react@19.2.1)
       '@radix-ui/react-context': 1.1.2(@types/react@19.0.0)(react@19.2.1)
@@ -2446,9 +2459,9 @@ snapshots:
     optionalDependencies:
       '@types/react': 19.0.0
 
-  '@radix-ui/react-switch@1.2.5(@types/react-dom@19.0.0)(@types/react@19.0.0)(react-dom@19.2.1(react@19.2.1))(react@19.2.1)':
+  '@radix-ui/react-switch@1.2.6(@types/react-dom@19.0.0)(@types/react@19.0.0)(react-dom@19.2.1(react@19.2.1))(react@19.2.1)':
     dependencies:
-      '@radix-ui/primitive': 1.1.2
+      '@radix-ui/primitive': 1.1.3
       '@radix-ui/react-compose-refs': 1.1.2(@types/react@19.0.0)(react@19.2.1)
       '@radix-ui/react-context': 1.1.2(@types/react@19.0.0)(react@19.2.1)
       '@radix-ui/react-primitive': 2.1.3(@types/react-dom@19.0.0)(@types/react@19.0.0)(react-dom@19.2.1(react@19.2.1))(react@19.2.1)
@@ -2505,6 +2518,17 @@ snapshots:
       '@radix-ui/react-primitive': 2.1.3(@types/react-dom@19.0.0)(@types/react@19.0.0)(react-dom@19.2.1(react@19.2.1))(react@19.2.1)
       '@radix-ui/react-roving-focus': 1.1.11(@types/react-dom@19.0.0)(@types/react@19.0.0)(react-dom@19.2.1(react@19.2.1))(react@19.2.1)
       '@radix-ui/react-toggle': 1.1.10(@types/react-dom@19.0.0)(@types/react@19.0.0)(react-dom@19.2.1(react@19.2.1))(react@19.2.1)
+      '@radix-ui/react-use-controllable-state': 1.2.2(@types/react@19.0.0)(react@19.2.1)
+      react: 19.2.1
+      react-dom: 19.2.1(react@19.2.1)
+    optionalDependencies:
+      '@types/react': 19.0.0
+      '@types/react-dom': 19.0.0
+
+  '@radix-ui/react-toggle@1.1.10(@types/react-dom@19.0.0)(@types/react@19.0.0)(react-dom@19.2.1(react@19.2.1))(react@19.2.1)':
+    dependencies:
+      '@radix-ui/primitive': 1.1.3
+      '@radix-ui/react-primitive': 2.1.3(@types/react-dom@19.0.0)(@types/react@19.0.0)(react-dom@19.2.1(react@19.2.1))(react@19.2.1)
       '@radix-ui/react-use-controllable-state': 1.2.2(@types/react@19.0.0)(react@19.2.1)
       react: 19.2.1
       react-dom: 19.2.1(react@19.2.1)
