@@ -1,5 +1,7 @@
 # GitHub Follower Checker
 
+[![Website githubfollowers.vercel.app](https://img.shields.io/website-up-down-green-red/https/githubfollowers.vercel.app.svg?style=for-the-badge)](https://githubfollowers.vercel.app/)
+
 A modern, responsive web application built with **Next.js 15** that helps you analyze your GitHub connections. Easily discover who isn't following you back or find the followers you haven't reciprocated.
 
 ## ✨ Features
